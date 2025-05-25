@@ -254,13 +254,13 @@ if st.button("🚀 Analyze Resume", type="primary"):
                 st.subheader("📊 Analysis Results")
                 st.markdown(analysis)
 
-                # Show technical details
-                with st.expander("Technical Details"):
-                    st.write(f"Model Used: {MODEL_NAME}")
-                    if feedback:
-                        st.write("Safety Feedback:", [f"{r.category}: {r.probability}" for r in feedback.safety_ratings])
-                    if candidates:
-                        st.write("Completion Reason:", candidates[0].finish_reason)
+                # # Show technical details
+                # with st.expander("Technical Details"):
+                #     st.write(f"Model Used: {MODEL_NAME}")
+                #     if feedback:
+                #         st.write("Safety Feedback:", [f"{r.category}: {r.probability}" for r in feedback.safety_ratings])
+                #     if candidates:
+                #         st.write("Completion Reason:", candidates[0].finish_reason)
 
             except Exception as e:
                 st.error(f"Analysis failed: {str(e)}")
