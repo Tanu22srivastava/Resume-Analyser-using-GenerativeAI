@@ -4,53 +4,45 @@ import google.generativeai as genai
 import streamlit as st
 from io import BytesIO
 
-# Required for file processing
 try:
     from PyPDF2 import PdfReader
 except ImportError:
     st.error("Please install PyPDF2: pip install PyPDF2")
-    st.stop() # Stop if not installed, as it's critical
+    st.stop() 
 try:
     from docx import Document
 except ImportError:
     st.error("Please install python-docx: pip install python-docx")
-    st.stop() # Stop if not installed, as it's critical
-
-# --- Load Environment Variables ---
+    st.stop() 
+---
 load_dotenv()
 API_KEY = os.getenv('GOOGLE_API_KEY')
 
-# --- Configure Gemini API ---
+
 if not API_KEY:
     st.error("Error: GOOGLE_API_KEY environment variable not set.")
     st.info("Please set it in your .env file in the project root (e.g., GOOGLE_API_KEY='your_api_key').")
     st.stop()
 genai.configure(api_key=API_KEY)
 
-# --- Model Selection ---
-MODEL_NAME = 'gemini-1.5-flash'  # Good balance of speed and accuracy
+MODEL_NAME = 'gemini-1.5-flash'  
 
-# --- File Processing Functions ---
 def read_pdf(file):
     """Extracts text from PDF files"""
     pdf = PdfReader(BytesIO(file.read()))
     text = ""
     for page in pdf.pages:
-        text += page.extract_text() or ""  # Handle None returns
+        text += page.extract_text() or ""  
     return text
 
 def read_docx(file):
-    """Extracts text from DOCX files"""
     doc = Document(BytesIO(file.read()))
     return "\n".join([paragraph.text for paragraph in doc.paragraphs if paragraph.text])
 
 def read_txt(file):
-    """Reads text from TXT files"""
     return file.read().decode("utf-8")
 
-# --- Analysis Function ---
 def get_resume_analysis(job_description: str, resume_text: str):
-    """Sends job description and resume to Gemini for analysis."""
     analysis_prompt = f"""
     You are an expert resume analysis AI. Analyze this resume against the job description and provide:
 
@@ -73,22 +65,19 @@ def get_resume_analysis(job_description: str, resume_text: str):
     model = genai.GenerativeModel(MODEL_NAME)
     response = model.generate_content(analysis_prompt)
     return response.text, response.prompt_feedback, response.candidates
-
-# --- Streamlit UI Configuration ---
+    
 st.set_page_config(
     page_title="Resume Analyzer Pro",
     layout="wide",
     page_icon="📄"
 )
 
-# --- Theme Management ---
 if 'theme' not in st.session_state:
     st.session_state.theme = 'light'
 
 def toggle_theme():
     st.session_state.theme = 'dark' if st.session_state.theme == 'light' else 'light'
 
-# Apply theme colors
 theme = st.session_state.theme
 primary_bg = "#FFFFFF" if theme == 'light' else "#1E1E1E"
 secondary_bg = "#E0E2E6" if theme == 'light' else "#2D2D2D" # Slightly darker for better contrast in light mode
@@ -172,7 +161,6 @@ st.markdown(f"""
     </style>
 """, unsafe_allow_html=True)
 
-# --- Header Section ---
 col1, col2 = st.columns([0.85, 0.15])
 with col1:
     st.title("📄 AI Resume Analyzer")
@@ -183,11 +171,8 @@ with col2:
 
 st.divider()
 
-# --- Main Input Section ---
-# Job Description Input
 st.header("1. Job Description Input 🎯")
-# The label is "Paste the job description here:", this is rendered outside the textarea
-# and will now be affected by our general CSS or specific label selectors.
+
 job_description = st.text_area(
     "Paste the job description here:",
     height=200,
@@ -195,24 +180,21 @@ job_description = st.text_area(
     key="jd"
 )
 
-# Resume Input Section
 st.header("2. Resume Input 📝")
 resume_text = ""
 
-# The label for st.radio is "Choose input method:", this will be targeted by .stRadio > label
 upload_option = st.radio(
     "Choose input method:",
     ["Upload File", "Paste Text"],
     horizontal=True,
-    label_visibility="visible" # Changed to visible to make sure label appears
+    label_visibility="visible"
 )
 
 if upload_option == "Upload File":
-    # The label for st.file_uploader is "Upload resume (PDF, DOCX, TXT)"
     uploaded_file = st.file_uploader(
         "Upload resume (PDF, DOCX, TXT)",
         type=["pdf", "docx", "txt"],
-        label_visibility="visible" # Changed to visible to make sure label appears
+        label_visibility="visible" 
     )
 
     if uploaded_file:
@@ -229,16 +211,14 @@ if upload_option == "Upload File":
 
         except Exception as e:
             st.error(f"Error processing file: {str(e)}")
-else: # Paste Text option selected
-    # The label for this st.text_area is "Paste your resume text here:"
+else: 
     resume_text = st.text_area(
         "Paste your resume text here:",
         height=300,
         placeholder="John Doe\nSenior Software Engineer...",
-        label_visibility="visible" # Changed to visible to make sure label appears
+        label_visibility="visible"
     )
 
-# --- Analysis Section ---
 st.divider()
 if st.button("🚀 Analyze Resume", type="primary"):
     if not job_description.strip():
@@ -254,30 +234,19 @@ if st.button("🚀 Analyze Resume", type="primary"):
                 st.subheader("📊 Analysis Results")
                 st.markdown(analysis)
 
-                # # Show technical details
-                # with st.expander("Technical Details"):
-                #     st.write(f"Model Used: {MODEL_NAME}")
-                #     if feedback:
-                #         st.write("Safety Feedback:", [f"{r.category}: {r.probability}" for r in feedback.safety_ratings])
-                #     if candidates:
-                #         st.write("Completion Reason:", candidates[0].finish_reason)
-
             except Exception as e:
                 st.error(f"Analysis failed: {str(e)}")
                 st.info("Common fixes: Check API key, internet connection, or try shorter text")
 
-# --- Feedback Section ---
 st.header("Got Feedback? We'd Love to Hear From You! 💬")
 st.markdown("""
 Your insights help us improve this AI Resume Analyzer.
 Please share your comments, suggestions, or any issues you encountered.
 """)
 
-# Option for Google Form
 if st.button("Give Feedback"):
     st.markdown(f'<a href="https://docs.google.com/forms/d/e/1FAIpQLScpyQNtZyJlQTeMtRxtNbmnETo8jmDWgKxwcauBbgJ--GwJpw/viewform?usp=sharing&ouid=104160088181469050251" target="_blank" rel="noopener noreferrer">Click here to open the feedback form!</a>', unsafe_allow_html=True)
 
-# --- Footer ---
 st.divider()
 st.markdown("""
     *Built with ❤️ *
